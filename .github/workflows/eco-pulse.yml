@@ -1,0 +1,44 @@
+# ============================================================
+# Eco-Pulse — GitHub Actions Workflow
+# Triggered on pull_request to calculate carbon footprint
+# and post a scorecard comment.
+# ============================================================
+
+name: "🌱 Eco-Pulse Carbon Scorecard"
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  carbon-analysis:
+    name: "Calculate Carbon Footprint"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Eco-Pulse Analysis
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          CO2SIGNAL_API_KEY: ${{ secrets.CO2SIGNAL_API_KEY }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO_FULL_NAME: ${{ github.repository }}
+          BRANCH_NAME: ${{ github.head_ref }}
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+        run: npx tsx scripts/analyze-pr.ts
